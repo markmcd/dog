@@ -1,0 +1,12 @@
+- dog -
+
+(c) Mark McDonald, 2006
+
+As the text in the script says, it's a simple colour replacement for the unix 'cat'
+utility.  There is already another project called dog, so this may get renamed in
+the future some time - any suggestions are welcome.
+
+Currently I'm just releasing this as freeware, with no license to modify or
+redistribute.  I intend to give it a GPL job later, when it gets a new name.
+
+enjoi.

@@ -1,0 +1,78 @@
+#!/usr/bin/perl -w
+# vim: ts=4 sw=4 ai si
+
+# ============================================================================
+#	dog - (c) 2006 Mark McDonald - freesoftware@wicked.dj
+# ----------------------------------------------------------------------------
+# A simple little script I use as a replacement for the GNU 'cat' utility,
+# dog applies vim's syntax highlighting to a file being dumped on STDOUT.
+# The magic is all done in the Text::VimColor module and the XML/XSLT.
+# Currently I only have a half-done elflord syntax stylesheet but I'll start
+# work on a .vim -> .xslt converter next :)
+# ============================================================================
+
+use strict;
+
+use Text::VimColor;
+use Getopt::Long;
+use XML::LibXSLT;
+use XML::LibXML;
+
+my $file	= '';
+my $syntax	= '';
+my $colours	= 'elflord';
+my $colour_path = '../etc';
+
+main();
+
+sub main {
+	usage();
+
+	my %syn_args;
+	if ($file) {
+		$syn_args{file} = $file;
+	}
+	else {
+		if ($file = shift @ARGV) {
+			$syn_args{file} = $file;
+		}
+		else {
+			$syn_args{file} = \*STDIN;
+		}
+	}
+	if ($syntax) {
+		$syn_args{filetype} = $syntax;
+	}
+
+	my $syntax = Text::VimColor->new(%syn_args);
+
+#	print $syntax->xml();
+
+	my $xml_parser	= XML::LibXML->new();
+	my $xslt_parser	= XML::LibXSLT->new();
+
+	my $input_xml	 = $xml_parser->parse_string($syntax->xml());
+	my $colourscheme = $xml_parser->parse_file("$colour_path/$colours.xslt");
+	my $stylesheet	 = $xslt_parser->parse_stylesheet($colourscheme);
+	my $output_xml	 = $stylesheet->transform($input_xml);
+
+	my $xml_nodes = $output_xml->documentElement->childNodes;
+	foreach my $node ($xml_nodes->get_nodelist) {
+		if ($node->nodeName eq 'esc') {
+			print "\033";
+		}
+		else {
+			print $node->nodeValue;
+		}
+	}
+
+#	print $stylesheet->output_string($output_xml);
+}
+
+sub usage {
+	my $result = GetOptions(
+		"f|file=s"		=> \$file,
+		"s|syntax=s"	=> \$syntax,
+		"c|colours=s"	=> \$colours
+	);
+}
